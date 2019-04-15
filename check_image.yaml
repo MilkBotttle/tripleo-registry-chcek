@@ -1,0 +1,30 @@
+---
+- hosts: localhost
+  gather_facts: no
+  tasks:
+    - set_fact: missing_images={}
+
+    - tempfile:
+        state: file
+      register: tempfile
+
+    - name: Read images parameter
+      include_vars: 
+        file: "{{ image_parameter_path }}"
+        name: docker_urls
+
+    - include_tasks: skopeo_tasks.yaml
+      vars:
+        filepath: "{{ tempfile.path }}"
+      when: item.key != "DockerInsecureRegistryAddress"
+      with_dict: "{{docker_urls.parameter_defaults}}"
+
+    - stat:
+        path: "{{ tempfile.path }}"
+      register: st
+
+    - name: Find Missing images
+      assert:
+        that:
+          - "st.stat.size == 0 "
+        msg: "Find missing images ! Please check {{ tempfile.path }} for more info."

@@ -1,0 +1,13 @@
+- name: Inspect image {{ item.key }}
+  shell: |
+    skopeo inspect --tls-verify=false docker://{{item.value}}
+  ignore_errors: yes
+  register: inspect_result
+
+- name: Missing ?
+  lineinfile:
+    path: "{{ filepath }}"
+    line: "{{ item.key }}: {{ item.value }}"
+    insertbefore: BOF
+  when: inspect_result.rc > 0
+
